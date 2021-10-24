@@ -1,0 +1,49 @@
+version: '3'
+services:
+
+  database:
+    image: postgres:latest
+
+    restart: always
+
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    
+    ports:
+      - "5423:5432"
+
+    env_file:
+      - database_creds.env
+    volumes:
+      - database-data:/var/lib/postgresql/data/
+    networks:
+      - database
+
+  
+  python_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      database:
+        condition: service_healthy
+    env_file:
+      - database_creds.env
+
+    networks:
+      - database
+    ports:
+      - "8080:8080"
+
+
+networks:
+  database:
+    driver: bridge
+
+volumes:
+  database-data:
+    name: metaspace_database-data
